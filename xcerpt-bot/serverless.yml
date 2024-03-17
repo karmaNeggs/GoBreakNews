@@ -1,0 +1,46 @@
+service: xcerpt-telegram-bot
+
+frameworkVersion: "2"
+
+provider:
+  name: aws
+  runtime: python3.8
+  environment:
+    API_TOKEN: 1857993293:AAGJTmOj0fwRss1l-eohFE3HHAQV59SN_H4
+    LOGGING_LEVEL: debug
+  stage: dev
+  region: ap-south-1
+  vpc:
+    securityGroupIds:
+      - sg-0dfb6943ccb4edd3d
+    subnetIds:
+      - subnet-00f25207e31cce08a
+      - subnet-0270cbe0ec07a7113
+      - subnet-0e801387ddb8036c8
+  iamRoleStatements:
+    - Effect: Allow
+      Action: "rds-db:connect"
+      Resource: "arn:aws:rds-db:ap-south-1:693898972568:dbuser:prx-0d1371755fe5394a7/*"
+
+package:
+  exclude:
+    - ./**
+  include:
+    - src/**
+
+plugins:
+  - serverless-python-requirements
+
+functions:
+  index-function:
+    handler: src/lambda_function.lambda_handler
+    layers:
+      - arn:aws:lambda:ap-south-1:770693421928:layer:Klayers-python38-pandas:32
+      - arn:aws:lambda:ap-south-1:770693421928:layer:Klayers-python38-aws-psycopg2:1
+      - arn:aws:lambda:ap-south-1:770693421928:layer:Klayers-python38-Pillow:10
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+          input:
+            message: ${file(./src/Data/consensus_config.json)}
